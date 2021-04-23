@@ -1,82 +1,117 @@
-
-//vars for my bot
-
-const Discord =  require('discord.js')
-const client = new Discord.Client()
+const Discord = require('discord.js');
+const client = new Discord.Client();
 const fetch = require("node-fetch")
-const giveMeAJoke = require('discord-jokes')
-const { readdirSync } = require('fs');
-const { join } = require('path');
-client.commands= new Discord.Collection();
+const { prefix, token } = require('./config.json');
+const fs = require('fs');
+const api = require('imageapi.js')
+client.commands = new Discord.Collection();
+const commandFolders = fs.readdirSync('./commands');
 
-const prefix ='-'
- const { token } = require('./config.json');
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-client.login(token);
+//hosting dev.to//
+const express = require('express');
+const app = express();
+const port = 3000;
 
-//command, not being used now..//
-const commandFiles = readdirSync(join(__dirname, "commands")).filter(file => file.endsWith(".js"));
+app.get('/', (req, res) => res.send('JokeBot is hosted !'));
 
-//Jokes//
-giveMeAJoke.getRandomDadJoke (function(joke){
- console.log(joke)
+app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`));
+
+client.login(token)
+
+//on ready
+client.once('ready', () => {
+	console.log(`Beep, Boop ${client.user.tag} is Online!`);
+  client.user.setActivity('With Your Mom', { type: 'PLAYING' })
 });
 
-//function for quote//
-function getQuote () {
-  return fetch("https://zenquotes.io/api/random")
-    .then(res => {
-      return res.json()
-    })
-    .then(data => {
-      return data[0] ['q'] + " -" + data[0]['a']
-    })
+
+//Messages//
+client.on('message', async msg => {
+
+  if (!msg.content.startsWith(prefix) || msg.author.bot) return;
+
+  const args = msg.content.slice(prefix.length).trim().split(/ +/);
+  const commandName = args.shift().toLowerCase(); 
+
+  if (msg.content.startsWith(`${prefix}ping`)) {
+    client.commands.get('ping').execute(msg, args);
+
+  } else if (msg.content.startsWith(`${prefix}beep`)) {
+	  msg.channel.send('boop!');
+
+  } else if (msg.content === `${prefix}server`) {
+   	const embedServer = new Discord.MessageEmbed()
+    .setColor('#FFB6C1')
+    .setDescription(`Sever Name: ${msg.guild.name}`)
+    .setFooter(`Total Members: ${msg.guild.memberCount}`)
+     msg.channel.send(embedServer)
+    
+
+
+  } else if (msg.content === `${prefix}userinfo`) {
+	msg.reply(`Your username: ${msg.author.username}\nYour ID: ${msg.author.id}`);
+
+  } else if (msg.content.startsWith(`${prefix}troll`)){
+      const taggedUser = msg.mentions.user
+
+      msg.channel.send("The phrase 'it's just a game' is such a weak mindset. You are ok with what happened, losing, imperfection of a craft. When you stop getting angry after losing, you've lost twice. There's always something to learn, and always room for improvement, never settle. -Ninja")
+  } else if(msg.content.startsWith(`${prefix}pfp`)) {
+      if (!msg.mentions.users.size) {
+		    return msg.channel.send(`Your avatar: <${msg.author.displayAvatarURL({ format: "png", dynamic: true })}>`);
+	}
+
+  } else if(msg.content.startsWith(`${prefix}joke`)){
+    client.commands.get('joke').execute(msg, args);
+
+    //weather command
+  } else if(msg.content.startsWith(`${prefix}weather`)) {
+    client.commands.get('weather').execute(client, msg, args)
+
+  } else if(msg.content.startsWith(`${prefix}quote`)){
+    client.commands.get('quote').execute(client, msg, args)
+
+  } else if(msg.content.startsWith(`${prefix}commandz`)) {
+    const embedcommmands = new Discord.MessageEmbed()
+    .setColor('#FFB6C1')
+    .setTitle('My Commands!')
+    .setAuthor('My Main Commands Include Joke, Quote, Weather, and Meme!')
+    .setDescription('Other usefull and fun commands are ping, server, userinfo, pfp, beep, and troll! Remember My Commands are Called With the Prefix "-"')
+    .setFooter('More To Come From My Amazing Dev')
+
+    msg.reply(embedcommmands)
+    //r/meme command//
+  } else if(msg.content.startsWith(`${prefix}meme`)) {
+      let subreddits = [
+      "memes","dankmemes"
+    ];
+    let subreddit = subreddits[Math.floor(Math.random()*(subreddits.length))];
+    let img = await api(subreddit)
+    const Embed = new Discord.MessageEmbed()
+    .setTitle(`A meme from r/arabfunny`)
+    .setURL(`https://www.reddit.com/r/arabfunny`)
+    .setColor('RANDOM')
+    .setImage(img)
+    msg.channel.send(Embed)
+  }
+
+//weird commmand shit dont mess with this
+  if (!client.commands.has(commandName)) return;
+
+  const command = client.commands.get(commandName);
+
+
+try {
+	 //command.execute(msg, args);
+} catch (error) {
+	console.error(error);
+	msg.reply('there was an error trying to execute that command!');
 }
 
-
-//ready,status//
-client.on('ready', () => {
- console.log(`Logged In As ${client.user.tag}!`)
- 
- client.user.setActivity('With Your Mom Lmfao')
-})
- 
-//Msg//
-client.on('message', msg => {
- if (msg.author.bot){
-   return null
- }
- //quote msg//
- if(msg.content === '-quote') {
-   getQuote().then(quote => msg.channel.send(quote))
- }
- //command//
- if (msg.content === '?commands'){
-   const embed = new Discord.MessageEmbed()
-   .setColor('#FFB6C1')
-   .setAuthor('My Main Commands Are -Joke and -Quote!')
-   .setTitle('My Commands!')
-   .setDescription('-peepee, -ping, -pong, -joke, -troll, -quote')
-   .setFooter('More To Come For The Worlds Best Dev, Hank Brown');
- 
-   msg.reply(embed)
- }
- 
- //smallcommands//
- if (msg.content === '-ping') {
-   msg.reply('pong')
- } else if (msg.content === '-pong') {
-   msg.reply('ping')
- } else if (msg.content === '-joke'){
-   giveMeAJoke.getRandomDadJoke(function(joke){
-     msg.channel.send(joke)
-   })
- } else if(msg.content === '-peepee') {
-   msg.reply('poopoo')
- } else if(msg.content === '-weather'){
-   msg.channel.send('Dev is Working On This Feature')
- } else if (msg.content === '-troll'){
-   msg.reply('What Do You Do With A Soccer Ball?')
- } 
- 
 });
+  //for loop for finding called command files
+for (const file of commandFiles) {
+	const command = require(`./commands/${file}`);
+	client.commands.set(command.name, command);
+}

@@ -76,7 +76,7 @@ client.on('message', async msg => {
     const embedcommmands = new Discord.MessageEmbed()
     .setColor('#FFB6C1')
     .setTitle('My Commands!')
-    .setAuthor('My Main Commands Include Joke, Quote, Weather, and Meme!')
+    .setAuthor('My Main Commands Include Joke, Quote, Weather, Kick, and Meme!')
     .setDescription('Other usefull and fun commands are ping, server, userinfo, pfp, beep, and troll! Remember My Commands are Called With the Prefix "-"')
     .setFooter('More To Come From My Amazing Dev')
 
@@ -89,12 +89,15 @@ client.on('message', async msg => {
     let subreddit = subreddits[Math.floor(Math.random()*(subreddits.length))];
     let img = await api(subreddit)
     const Embed = new Discord.MessageEmbed()
-    .setTitle(`A meme from r/arabfunny`)
-    .setURL(`https://www.reddit.com/r/arabfunny`)
+    .setTitle(`A meme from r/dankmemes`)
+    .setURL(`https://www.reddit.com/r/dankmemes`)
     .setColor('RANDOM')
     .setImage(img)
     msg.channel.send(Embed)
-  }
+    //kick command!!//
+  } else if (msg.content.startsWith(`${prefix}kick`)) {
+    client.commands.get('kick').execute(msg, args)
+  } 
 
 //weird commmand shit dont mess with this
   if (!client.commands.has(commandName)) return;
